@@ -82,17 +82,16 @@ Error with pre-create check: "NoPermission"
 
 <p>A sample output of the <em>ifconfig</em> command:</p>
 
-<p>```
-  eth0      Link encap:Ethernet  HWaddr 02:42:AC:11:00:02
+<pre><code>  eth0      Link encap:Ethernet  HWaddr 02:42:AC:11:00:02
             inet addr:172.17.0.2  Bcast:0.0.0.0  Mask:255.255.0.0
             inet6 addr: fe80::42:acff:fe11:2/64 Scope:Link
             UP BROADCAST RUNNING MULTICAST  MTU:1500  Metric:1
             RX packets:45290 errors:0 dropped:0 overruns:0 frame:0
             TX packets:18460 errors:0 dropped:0 overruns:0 carrier:0
             collisions:0 txqueuelen:0
-            RX bytes:18330503 (17.4 MiB)  TX bytes:65223998 (62.2 MiB)</p>
+            RX bytes:18330503 (17.4 MiB)  TX bytes:65223998 (62.2 MiB)
 
-<p>lo        Link encap:Local Loopback
+  lo        Link encap:Local Loopback
             inet addr:127.0.0.1  Mask:255.0.0.0
             inet6 addr: ::1/128 Scope:Host
             UP LOOPBACK RUNNING  MTU:65536  Metric:1
@@ -100,27 +99,28 @@ Error with pre-create check: "NoPermission"
             TX packets:1558816 errors:0 dropped:0 overruns:0 carrier:0
             collisions:0 txqueuelen:1
             RX bytes:395593712 (377.2 MiB)  TX bytes:395593712 (377.2 MiB)
-  ```</p>
+</code></pre>
 
 <ul>
   <li>
     <p><strong>none</strong> -  The container still has its own network stack but not a network interface except the loopback.  Obviously this network type will not work for any applications that need some sort of connectivity.</p>
 
     <p>A sample output of the <em>ifconfig</em> command:</p>
+  </li>
+</ul>
 
-    <pre><code>lo        Link encap:Local Loopback
-          inet addr:127.0.0.1  Mask:255.0.0.0
-          inet6 addr: ::1/128 Scope:Host
-          UP LOOPBACK RUNNING  MTU:65536  Metric:1
-          RX packets:0 errors:0 dropped:0 overruns:0 frame:0
-          TX packets:0 errors:0 dropped:0 overruns:0 carrier:0
-          collisions:0 txqueuelen:0
-          RX bytes:0 (0.0 B)  TX bytes:0 (0.0 B)
+<pre><code>  lo        Link encap:Local Loopback
+            inet addr:127.0.0.1  Mask:255.0.0.0
+            inet6 addr: ::1/128 Scope:Host
+            UP LOOPBACK RUNNING  MTU:65536  Metric:1
+            RX packets:0 errors:0 dropped:0 overruns:0 frame:0
+            TX packets:0 errors:0 dropped:0 overruns:0 carrier:0
+            collisions:0 txqueuelen:0
+            RX bytes:0 (0.0 B)  TX bytes:0 (0.0 B)
 </code></pre>
-  </li>
-  <li>
-    <p><strong>host</strong> - The container uses the host network stack. In other words it has the same network interface and ip configuration as the host.</p>
-  </li>
+
+<ul>
+  <li><strong>host</strong> - The container uses the host network stack. In other words it has the same network interface and ip configuration as the host.</li>
 </ul>
 
 <p>The <strong>host</strong> network type makes a good match for the ESX setup as we can actually communicate over the network with the host machine (which is the boot2docker VM) and this means that it will be easy to communicate with any applications running within a container. However, in case you need to have more than one container running (like in most cases) this can cause a port conflict between the applications running in different containers.  You can resolve this in two ways. The first one is to modify the settings of the application to bind to a different port(s). The second option is to assign multiple network addresses interfaces on the VM or use interface aliases and change the application settings to bind to a different network interface.   Still the above options might not be possible at all or may be too much hassle to implement. This leaves us with only one possible option  - bridge.</p>
