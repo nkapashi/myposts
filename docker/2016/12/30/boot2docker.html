@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+<title>nikolay(breath, eat)</title>
+<meta name="description" content="nikolay(breath, eat)">
+<meta name="keywords" content="">
+
+<meta property="og:type" content="article">
+<meta property="og:title" content="DOCKER with boot2docker and VmWare ESX &#8211; ">
+<meta property="og:description" content="nikolay(breath, eat)">
+<meta property="og:url" content="http://myposts.kokobok.host/docker/2016/12/30/boot2docker.html">
+<meta property="og:site_name" content="">
+
+<!-- Webmaster Tools verfication -->
+
+
+
+
+<link rel="canonical" href="http://myposts.kokobok.host/docker/2016/12/30/boot2docker.html">
+<link href="http://myposts.kokobok.host/feed.xml" type="application/atom+xml" rel="alternate" title=" Feed">
+
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<link rel="stylesheet" href="http://myposts.kokobok.host/css/base.min.css" type="text/css" />
+<link rel="stylesheet" href="http://myposts.kokobok.host/css/github.min.css" type="text/css" />
+<link rel="stylesheet" href="http://myposts.kokobok.host/css/octicons.css" type="text/css" />
+<link href='http://fonts.googleapis.com/css?family=Lato' rel='stylesheet' type='text/css'>
+
+</head>
+<body>
+  <div class="header-container">
+  <header>
+      <ul class="nav">
+        <!--Change the URL here if working on an absolute domain-->
+        <li><a href="/"><span class="mega-octicon octicon-keyboard" style="margin-right: 6px;"></span>thisBlog</a></li>
+		<li><a href="/about"><span class="mega-octicon octicon-hubot" style="margin-right: 6px;"></span>aboutMe</a></li>
+        <li><a href="https://nkapashi.github.io/"><span class="mega-octicon octicon-octoface" style="margin-right: 6px;"></span>meGithub</a></li>
+      </ul>
+  </header>
+</div>
+  <div class="container">
+    <p class="intro">
+      Another tech blog from the millions out there. Though this one is mine...
+    </p>
+  <h2>DOCKER with boot2docker and VmWare ESX</h2>
+<p class="meta">30 Dec 2016</p>
+
+<div class="post">
+<h1 id="manually-installing-boot2docker-on-vmware-vsphere">Manually installing boot2docker on VMware vSphere</h1>
+
+<p>[TOC]</p>
+
+<p>One very convenient and frequently used way to run <a href="https://www.docker.com/">Docker</a> containers is with the help of the  <a href="http://boot2docker.io/">boot2docker</a> linux distribution. This Tiny Core Linux based distribution is designed to run Docker. In fact this what <a href="https://docs.docker.com/machine">Docker Machine</a> uses when deploying a Docker service on a virtual host - it creates a boot2docker virtual machine.</p>
+
+<p>In other words  if you want to run Docker on a virtual host such as VmWare ESX or Oracle Virtualbox you can use Docker machine to deploy a boot2docker virtual machine so it can run your containers. Many other virtual environments are supported such as AWS, Microsoft Azure, Hyper-V, Google Compute Engine. The full list can be found <a href="https://docs.docker.com/machine/drivers/">here</a>.</p>
+
+<p>The bellow docker-machine command can be used to deploy  Docker on VMware vSphere:</p>
+
+<pre><code>docker-machine create --driver vmwarevsphere --vmwarevsphere-username=domain\userName --vmwarevsphere-password=passWord --vmwarevsphere-cpu-count=4 --vmwarevsphere-memory-size=4096 --vmwarevsphere-vcenter=vcenter.host.name --vmwarevsphere-hostsystem=esxServer.host.name virtualmachineName
+</code></pre>
+
+<p>Description and full list of the options can be found under the <a href="https://docs.docker.com/machine/drivers/vsphere/">docker machine documentation</a> for the vSphere driver. Also you need to install <a href="https://www.docker.com/products/docker-toolbox">DOCKER TOOLBOX</a> in order to get the “docker-machine” executable and everything else needed.</p>
+
+<p>If the above method works for you than there is no good reason to install boot2docker in any other way! However, if for some reason the automatic deployment does not succeed and you do not have administrator access to the vSphere to resolve the cause of the issue, the manual installation route is not that long and the whole procedure is fairly straightforward.</p>
+
+<p>For example, I was getting the below error message for reasons that are still not known to me:</p>
+
+<pre><code>Running pre-create checks...
+Error with pre-create check: "NoPermission"
+</code></pre>
+
+<p>With the steps described below I was able to successfully set-up boot2docker VM on ESX, configure the needed certificates for authentication and configure the Windows Docker client tools to communicate with the Docker engine.</p>
+
+<p>Before continuing further, we need first to choose the network strategy for the Docker containers. This will be also the case if you are deploying automatically via docker-machine.</p>
+
+<h3 id="docker-networking--and--vmware-esx-">**Docker Networking  AND  VmWare ESX **</h3>
+
+<p>Docker supports three types of network modes:</p>
+
+<ul>
+  <li><strong>bridge</strong> - this is the default mode. For each container docker will bridge its network interface to the interface of the host. The Docker network interface by the default will have an ip address from the 172.17.0.0/16 network.</li>
+</ul>
+
+<p>A sample output of the <em>ifconfig</em> command:</p>
+
+<p>```
+  eth0      Link encap:Ethernet  HWaddr 02:42:AC:11:00:02
+            inet addr:172.17.0.2  Bcast:0.0.0.0  Mask:255.255.0.0
+            inet6 addr: fe80::42:acff:fe11:2/64 Scope:Link
+            UP BROADCAST RUNNING MULTICAST  MTU:1500  Metric:1
+            RX packets:45290 errors:0 dropped:0 overruns:0 frame:0
+            TX packets:18460 errors:0 dropped:0 overruns:0 carrier:0
+            collisions:0 txqueuelen:0
+            RX bytes:18330503 (17.4 MiB)  TX bytes:65223998 (62.2 MiB)</p>
+
+<p>lo        Link encap:Local Loopback
+            inet addr:127.0.0.1  Mask:255.0.0.0
+            inet6 addr: ::1/128 Scope:Host
+            UP LOOPBACK RUNNING  MTU:65536  Metric:1
+            RX packets:1558816 errors:0 dropped:0 overruns:0 frame:0
+            TX packets:1558816 errors:0 dropped:0 overruns:0 carrier:0
+            collisions:0 txqueuelen:1
+            RX bytes:395593712 (377.2 MiB)  TX bytes:395593712 (377.2 MiB)
+  ```</p>
+
+<ul>
+  <li>
+    <p><strong>none</strong> -  The container still has its own network stack but not a network interface except the loopback.  Obviously this network type will not work for any applications that need some sort of connectivity.</p>
+
+    <p>A sample output of the <em>ifconfig</em> command:</p>
+
+    <pre><code>lo        Link encap:Local Loopback
+          inet addr:127.0.0.1  Mask:255.0.0.0
+          inet6 addr: ::1/128 Scope:Host
+          UP LOOPBACK RUNNING  MTU:65536  Metric:1
+          RX packets:0 errors:0 dropped:0 overruns:0 frame:0
+          TX packets:0 errors:0 dropped:0 overruns:0 carrier:0
+          collisions:0 txqueuelen:0
+          RX bytes:0 (0.0 B)  TX bytes:0 (0.0 B)
+</code></pre>
+  </li>
+  <li>
+    <p><strong>host</strong> - The container uses the host network stack. In other words it has the same network interface and ip configuration as the host.</p>
+  </li>
+</ul>
+
+<p>The <strong>host</strong> network type makes a good match for the ESX setup as we can actually communicate over the network with the host machine (which is the boot2docker VM) and this means that it will be easy to communicate with any applications running within a container. However, in case you need to have more than one container running (like in most cases) this can cause a port conflict between the applications running in different containers.  You can resolve this in two ways. The first one is to modify the settings of the application to bind to a different port(s). The second option is to assign multiple network addresses interfaces on the VM or use interface aliases and change the application settings to bind to a different network interface.   Still the above options might not be possible at all or may be too much hassle to implement. This leaves us with only one possible option  - bridge.</p>
+
+<p>The <strong>bridge</strong> is the default network type. The problem with it is that your network configuration will not know how to reach the  bridge network (default is 172.17.0.1/16) or that network may already be defined on your end and the packets to be routed somewhere else. In case you run boot2docker on your local machine with VirtualBox or Hyper-V you can just add a route on your computer for the  172.17.0.1/16 to go via the virtual interface of the hypervisor.  Example:</p>
+
+<pre><code>route -p add 172.17.0.0 mask 255.255.0.0 192.168.99.100
+</code></pre>
+
+<p>In the above example 192.168.99.100 is the ip address of the “VirtualBox Host-Only Network” network.  However, it is a completely different story if the boot2docker vm is running on an ESX server. What can be done is to add a route on the gateway router to route packets for the 172.17.0.1/16 network via the ip address of the boot2docker VM (which has ip forwarding turned on by default). While this seems plausible, it might be not possible to implement it easily and for me looks to be more suitable option for Docker engines that run on a physical hardware rather than in a VM.</p>
+
+<p>So finally what we have left is NAT and this option is widely used to expose containers to the network. There is no need to  create any iptables rules as Docker will configure them automatically. The only thing needed to use NAT is to provide the <strong>–port or -p</strong> option when running a container.</p>
+
+<p>Example on how to expose container ports 22, 444, 443, 10022 to external network via NAT:</p>
+
+<pre><code>docker run --name myContainer -p 10.129.59.100:22:22 -p 10.129.59.100:444:444 -p 10.129.59.100:443:443 -p 10.129.59.100:10022:10022  -it docker_image /bin/bash
+</code></pre>
+
+<p>The above command will start a container from  the image named “docker_image” and will NAT incoming connections to tcp ports 22, 444, 443, 10022 listening on ip address  10.129.59.100 to the internal Docker interface which will be in the 172.17.0.1/16 network range. In this case the ip address 10.129.59.100 is assigned to the boot2docker VM and it can be accessed via the network.</p>
+
+<p>In my case I needed to run 5 containers with the same ports exposed to the network. My solution was to assign 6 network interfaces to the boot2docker VM. 1 Interface is used just for accessing the boo2docker VM and the other 5 for starting containers with the above command but specifying a different ip address.</p>
+
+<hr />
+
+<h3 id="manual-boot2docker-installation"><strong>Manual boot2docker installation</strong></h3>
+
+<ol>
+  <li>
+    <h4 id="install-docker-toolboxhttpswwwdockercomproductsdocker-toolbox">Install <a href="https://www.docker.com/products/docker-toolbox">DOCKER TOOLBOX</a></h4>
+
+    <p>The installation package contains the following components:</p>
+
+    <ul>
+      <li>docker (not Docker Engine)</li>
+      <li>docker-machine</li>
+      <li>docker-compose</li>
+      <li>Kitematic</li>
+      <li>Boot2Docker ISO</li>
+      <li>VirtualBox</li>
+    </ul>
+
+    <p>What you need to actually install is just <strong>docker, docker-machine and Boot2Docker ISO</strong>. The rest are not needed for this exercise.</p>
+
+    <p><em>Note that this does not install the Docker engine that is the actual service running containers. This just installs the client tools (docker command) to communicate with the Docker engine that runs inside the Boot2Docker VM which we are going to set-up on a ESX server manually because the docker-machine command (another client tool) did not manage to deploy it automatically due to some issue on the vSphere side.</em></p>
+  </li>
+  <li>
+    <h4 id="get-the-latest-boot2docker-iso-image">Get the latest Boot2Docker ISO image</h4>
+
+    <ul>
+      <li>Visit the following URL: https://api.github.com/repos/boot2docker/boot2docker/releases/latest This will return a JSON formatted result.</li>
+      <li>Click on the first “html_url”: link from top to bottom. This will take you to the latest boot2docker release page.</li>
+      <li>Scroll down and dowload the latest stable boot2docker.iso release.</li>
+    </ul>
+  </li>
+  <li>
+    <h4 id="transfer-the-boot2dockeriso-file-to-the-vsphere-storage">Transfer the boot2docker.iso file to the vSphere storage.</h4>
+
+    <p>I usually accomplish this by using the vSphere Client “Browse this datastore” feature to upload the  ISO image.</p>
+  </li>
+  <li>
+    <h4 id="create-a-new-virtual-machine">Create a new Virtual machine</h4>
+
+    <ul>
+      <li>Select “Other 2.6.x Linux (64-bit)”  guest operating system type for the boot2docker VM. This will allow to use the VMXNET 3 network adapter type which works out of the box with boot2docker.</li>
+      <li>Hard disk - the operating system will boot from the cdrom device. The hard drive will be partitioned and formatted during the first boot and used to store settings (persistence) and Docker images and containers. The drive will be mounted under /mnt/sda1. Everything will be stored under /mnt/sda1/var/lib/boot2docker and /mnt/sda1/var/lib/docker/.  Assign as much disk space as you think will be needed for the Docker images and containers. In order to boot you will always need the boot2docker.iso connected to the VM cdrom device.</li>
+      <li>CD/DVD drive - connect it to the boot2docker.iso and make sure “Connect at power on” is selected. As already mentioned the operating system will always boot from the cdrom. Where persistent storage is needed the VM hard disk will be used for that.</li>
+      <li>Network adapter(s) - create as many as you think will need. The driver type VMXNET 3 is recommended and supported by boot2dcoker VM out of the box.</li>
+      <li>CPU &amp; Memory - the more the better. This will be shared between all containers and applications running in them.</li>
+    </ul>
+
+    <ol>
+      <li>
+        <h4 id="first-boot-the-virtual-machine">First boot the virtual machine</h4>
+
+        <p>During first boot boot2docker will partition and format the hard VM hard drive, generate TLS certificates for the Docker engine service and for the SSHD daemon. Two services will be auto started upon boot - docker and ssh.</p>
+
+        <p>The <strong>login</strong> credentials are:</p>
+
+        <p><strong>username: docker</strong></p>
+
+        <p><strong>pass: tcuser</strong></p>
+      </li>
+      <li>
+        <h4 id="certificates-for-docker-client">Certificates for Docker client</h4>
+
+        <p>The Docker Engine that comes  with boot2docker VM is configured with certificate authentication.</p>
+
+        <p>The Docker client needs to use certificate authentication when connecting to the Docker Engine. This means that the client needs to have a key pair signed by a Certificate authority that  is trusted from Docker engine. In our case this is only one:</p>
+
+        <pre><code>Acceptable client certificate CA names
+/O=Boot2DockerCA
+</code></pre>
+
+        <p>The above Certificate Authority (CA) was generated by the boot2docker /etc/init.d/docker script. The same script takes care for generating the Docker Engine server certificate and the client ones. Everything is located under the  /var/lib/boot2docker/tls directory.</p>
+
+        <p><strong>cakey.pem</strong> - This is the TLS key for the certificate authority.
+<strong>ca.pem</strong> - This is the TLS certificate for the certificate authority</p>
+
+        <p><em>Deleting the above files and restarting boot2dcoker will regenerate all files in the /var/lib/boot2docker/tls directory.</em></p>
+
+        <p><strong>serverkey.pem</strong> - This is the TLS key used by the Docker Engine service.</p>
+
+        <p><strong>server.pem</strong> - The TLS certificate used by he Docker Engine service. It is signed with the cakey.pem.</p>
+
+        <p><strong>hostnames</strong> - This is not a certificate or key file. It contains the hostname and ip address of the boot2docker VM. The default Docker TLS policy is that the certificate Subject Alternative Name (SAN) matches either the hostname or the ip address of boot2docker VM.</p>
+
+        <p>Upon boot or  “/etc/init.d/docker restart” the content of the hostname file will be checked against the actual hostname and ip address. If any of those have been changed the serverkey.pem and server.pem will be generated again in order to have a correct SAN.</p>
+
+        <p><strong>key.pem</strong> - The TLS key file used by the Docker Client.</p>
+
+        <p><strong>cert.pem</strong> - The TLS certificate used  by the Docker Client.</p>
+
+        <p>Files <strong>key.pem, cert.pem and ca.pem</strong> are also copied under <strong>/home/docker/.docker/</strong> directory. These 3 files need to be transferred to the client machine.</p>
+
+        <p>In a summary:</p>
+
+        <ul>
+          <li>You have to copy the  <strong>key.pem, cert.pem and ca.pem</strong> files to your client machine. These files can be found in <strong>/home/docker/.docker/</strong> or /var/lib/boot2docker/tls.</li>
+          <li>In case a hostname or ip address has been changed the Docker server certificates will be re-generated on reboot or Docker service restart. This does not require any additional steps like updating the client keys as they will be still valid.  Delete the “<strong><em>hostnames</em></strong>”  file and restart Docker service If for some reason you want to re-generate the Docker server certificates.</li>
+          <li>Deleting the  <strong>cakey.pem</strong> and <strong>ca.pem</strong> files will regenerate all certificates files. In this case you have again to copy key.pem, cert.pem and ca.pem files.</li>
+        </ul>
+      </li>
+      <li>
+        <h4 id="setting-up-docker-client">Setting up Docker Client</h4>
+
+        <p>Once we have the client certificate pair and the signing CA certificate we just need to point  Docker client to the certificates path and to the ip address/hostname of the server where Docker engine runs (that will be the boot2docker VM). This is done by using environment variables.</p>
+
+        <p>Open a CMD window and enter:</p>
+
+        <pre><code>set DOCKER_CERT_PATH=C:\docker_machines\host01
+set DOCKER_HOST=tcp://10.129.12.12:2376
+</code></pre>
+
+        <p>Where:</p>
+
+        <ul>
+          <li>“C:\docker_machines\host01”  is the path where the certificates copied in step 6 are located.</li>
+          <li>“tcp://10.129.12.12:2376”  The ip address of the boot2dockr VM and the port number</li>
+        </ul>
+      </li>
+      <li>
+        <h4 id="testing-and-final-steps">Testing and final steps</h4>
+
+        <p>To test that you can communicate to the Docker Engine service enter the below command in the same CMD window as step 7:</p>
+
+        <pre><code>docker info
+</code></pre>
+
+        <p>If everything is correct the above command should  output a detailed statistics  and information about the Docker instance.</p>
+
+        <p>The last thing is to add the <strong>DOCKER_CERT_PATH</strong> and <strong>DOCKER_HOST</strong> to your windows user environment variables.</p>
+      </li>
+    </ol>
+  </li>
+</ol>
+
+</div>
+
+<div class="keep-in-touch">
+  <p>
+    
+  </p>
+</div>
+<a href="https://twitter.com/share" class="twitter-share-button" data-via="" data-size="large" data-hashtags="gotchacode">Tweet</a>
+<script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0],p=/^http:/.test(d.location)?'http':'https';if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src=p+'://platform.twitter.com/widgets.js';fjs.parentNode.insertBefore(js,fjs);}}(document, 'script', 'twitter-wjs');</script>
+
+
+<!-- Add Disqus comments. -->
+
+<div id="disqus_thread"></div>
+<script type="text/javascript">
+  /* * * CONFIGURATION VARIABLES: EDIT BEFORE PASTING INTO YOUR WEBPAGE * * */
+  var disqus_shortname = 'innablog-1'; // required: replace example with your forum shortname
+
+  /* * * DON'T EDIT BELOW THIS LINE * * */
+  (function() {
+    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+    dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+  })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+
+
+
+  
+
+<script type="text/javascript">
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', '']);
+  _gaq.push(['_trackPageview']);
+  (function() {
+  var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+  ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+  var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+</script>
+
+  </div><!-- /.main -->
+</body>
+</html>
