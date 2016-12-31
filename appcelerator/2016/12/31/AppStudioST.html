@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+<title>breathe-eat-repeat</title>
+<meta name="description" content="breathe-eat-repeat">
+<meta name="keywords" content="">
+
+<meta property="og:type" content="article">
+<meta property="og:title" content="Mobile App with Appcelerator Studio and JavaScript &#8211; ">
+<meta property="og:description" content="breathe-eat-repeat">
+<meta property="og:url" content="http://myposts.kokobok.host/appcelerator/2016/12/31/AppStudioST.html">
+<meta property="og:site_name" content="">
+
+<!-- Webmaster Tools verfication -->
+
+
+
+
+<link rel="canonical" href="http://myposts.kokobok.host/appcelerator/2016/12/31/AppStudioST.html">
+<link href="http://myposts.kokobok.host/feed.xml" type="application/atom+xml" rel="alternate" title=" Feed">
+
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<link rel="stylesheet" href="http://myposts.kokobok.host/css/base.min.css" type="text/css" />
+<link rel="stylesheet" href="http://myposts.kokobok.host/css/github.min.css" type="text/css" />
+<link rel="stylesheet" href="http://myposts.kokobok.host/css/octicons.css" type="text/css" />
+<link href='http://fonts.googleapis.com/css?family=Lato' rel='stylesheet' type='text/css'>
+
+</head>
+<body>
+  <div class="header-container">
+  <header>
+      <ul class="nav">
+        <!--Change the URL here if working on an absolute domain-->
+        <li><a href="/"><span class="mega-octicon octicon-keyboard" style="margin-right: 6px;"></span>thisBlog</a></li>
+		<li><a href="/about"><span class="mega-octicon octicon-hubot" style="margin-right: 6px;"></span>aboutMe</a></li>
+        <li><a href="https://github.com/nkapashi/"><span class="mega-octicon octicon-octoface" style="margin-right: 6px;"></span>meGithub</a></li>
+      </ul>
+  </header>
+</div>
+  <div class="container">
+    <p class="intro">
+      Another tech blog from the millions out there. Though this one is mine...
+    </p>
+  <h2>Mobile App with Appcelerator Studio and JavaScript</h2>
+<p class="meta">31 Dec 2016</p>
+
+<div class="post">
+<h2 id="writing-mft-file-tracking-mobile-application-with-appcelerator-studio">Writing MFT File-Tracking Mobile Application with Appcelerator Studio</h2>
+
+<h2 id="introduction">Introduction</h2>
+
+<p>Appcelerator studio is a suite of development tools that enables web and JavaScript developers to create native mobile applications that run across Android, iOS and Windows. It also support WebViews applications so you can have the best of both worlds - Titanium for accessing native components and  WebViews for rendering any web content by using the flexibility of HTML/CSS/JS and even jQuery.</p>
+
+<p>This article will demonstrate how to install <strong>Appcelerator Studio</strong> and set a basic development environment  to build an Android application that will display transferred files through a third party MFT solution (SecureTransport Server). The application has two tabs.  The first tab is for displaying a list with transferred files through SecureTransport server and their status. For this tab only a native code will be used, meaning  that Appcelerator  will translate the JavaScript code used and compile it to native code for Android. The second tab will display a pie chart based on the transferred files and their status. For rendering the interactive data-visualization, WebViews will be used to run a third party module based on jQuery - the <a href="http://www.shieldui.com">ShieldUI</a> library for JavaScript and HTML5.</p>
+
+<p>In both cases REST API calls will be used to retrieve JSON data from SecureTransport server on demand.</p>
+
+<p>While the above instructions assume Microsoft Windows environment and Adroid SDK, the steps will be similar for iOS devices and the code used to build the actual application will be identical.</p>
+
+<h2 id="table-of-contents">Table Of Contents</h2>
+
+<ol>
+  <li>
+    <p>Installing Appcelerator studio</p>
+  </li>
+  <li>
+    <p>Setting up Android SDK.</p>
+  </li>
+  <li>
+    <p>Writing the SecureTransport FileTracking application.</p>
+  </li>
+</ol>
+
+<h2 id="installing-appcelerator-studio">Installing Appcelerator studio</h2>
+
+<h3 id="obtaining-the-installation-package">Obtaining The Installation Package</h3>
+
+<p>The first step is to create an account with Appcelerator and download Appcelerator studio. To do this simply visit appcelerator.com. The registration is simplified and straightforward and everything that is needed is just an email address.  Once the registration is completed, you will be directly taken to the product choice menu, where you need to download “Appcelerator Studio IDE”. For this guide the Windows 32-bit installation package is used.</p>
+
+<h3 id="installing-appcelerator-studio-1">Installing Appcelerator Studio</h3>
+
+<p>There is really nothing special in the installation process that needs to be documented except that required third party prerequisites will be checked whether they are already installed or not and the Appcelerator installer will offer to install them  if needed.  Internet connection is most likely to be required during the install.  The prerequisites that will be installed if not found on the system are **node.js and Java 7 SDK 32-bit. **</p>
+
+<table>
+  <thead>
+    <tr>
+      <th><img src="image_001.png" alt="" /></th>
+      <th><img src="image_002.png" alt="" /></th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td> </td>
+      <td> </td>
+    </tr>
+  </tbody>
+</table>
+
+<p>(The above screen will be displayed if JDK 1.7.x is not found on the system)</p>
+
+<p>The other prerequisite that will be automatically installed is Node.js. The following CMD screen will appear during the setup. It appears that the “WARN” messages can be safely ignored.</p>
+
+<p><img src="image_0.png" alt="image alt text" /></p>
+
+<p>The first time Appcelerator studio is started it will ask for your Appcelerator credentials. For additional security a verification code will be sent to your email address that you will need to enter before being able to log in.</p>
+
+<p>On start the Appcelerator studio will ask where to create your workspace directory. That will be the place where all projects will be kept. The same prompt will appear every time  Appcelerator studio is started so you may want to set this as a default.</p>
+
+<p>Finally when started for first time Appcelerator studio will offer to install Android and Windows Software Development Kits (SDKs).</p>
+
+<h2 id="setting-up-android-sdk">Setting Up Android SDK</h2>
+
+<p>The Android SDK is needed to test run and compile Android applications. Upon its first run Appcelerator studio will offer to download the SDKs available for your platform. In case you are using Microsoft Windows you can build applications for Android and Windows Phone.  This guide is covering the build process for Android, so that is the only SDK selected for download. In addition the Installation wizard has a “Settings” button for each SDK. In the Android case you can select the version you want such as 5.1.1 or 6.0.  For the purpose of this document we will select 5.1.1 only. It is also important to note that the SDK might take a quite large space on the disk, so you may want to configure the directory for “Android SDK Location”. Note that it  may end up needing something like 15-20Gb of space once running Android emulator images.</p>
+
+<p><img src="image_1.png" alt="image alt text" /></p>
+
+<p>Once the “Configure” button is pressed the SDK will be downloaded and Android Virtual Device (AVD) or emulator will be created. The process may take up to few hours depending on your internet connection speed.</p>
+
+<p><img src="image_2.png" alt="image alt text" /></p>
+
+<p>After the above progress bar has completed, you are ready to configure a new Android Virtual Device (AVD) or emulator as the default one is based on ARM architecture. Emulating ARM on x86 will not yield any impressive performance at all.</p>
+
+<h3 id="configuring-android-virtual-device-avd">Configuring Android Virtual Device (AVD)</h3>
+
+<p>AVD is an Android device emulator that runs on PC. This can be used to run and test applications build with Appcelerator Studio. It is also possible to use an Android phone  connected to your PC. To do that you will need the proper drivers for the phone and enabling developers mode. Instructions on how to use a real device will not be provided in this guide.</p>
+
+<p>First some additional packages need to be downloaded to enable x86 based AVDs. Follow the steps below to download and install the needed prerequisites:</p>
+
+<ol>
+  <li>
+    <p>Navigate to your “Android SDK Home” directory. (You can check the location by going to Window &gt; Preferences &gt; Studio &gt; Platforms  &gt; Android in Appcelerator Studio) and start “<strong>android.bat</strong>”</p>
+  </li>
+  <li>
+    <p>Several Additional Entries will be checked such as Android SDK Tools,  Android 6.0 (API 23). Leave those checked and in addition select the <strong>Intel x86 Emulator Accelerator (HAXSM installer)</strong></p>
+  </li>
+  <li>
+    <p>Press the Install button to download  the packages (around 23 items).</p>
+  </li>
+  <li>
+    <p>Once the download is completed navigate to your Android SDK directory &gt; \extras\intel\Hardware_Accelerated_Execution_Manager and execute **intelhaxm-android.exe. **This will install the Intel Hardware Accelerated Execution Manager driver.</p>
+  </li>
+</ol>
+
+<p>After everything has finished downloading and installing the <strong>Android SDK Manager</strong> has to look similar like the below screen print.</p>
+
+<p><img src="image_3.png" alt="image alt text" /></p>
+
+<p>To build a new AVD, follow the steps below:</p>
+
+<ol>
+  <li>In Studio select Window &gt; Preferences &gt; Studio &gt; Platforms  &gt; Android &gt; Manage AVDs.</li>
+  <li>In the AVD Manager screen select the Create button.</li>
+  <li>Enter the values as per the screen below:</li>
+</ol>
+
+<table>
+  <thead>
+    <tr>
+      <th><img src="image_003.png" alt="" /></th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>Device</strong> - Select the hardware you want emulated.<br /><br /><strong>Target</strong> - The version of Android.We have downloaded and installed only 5.1.1 with API 22 Level.<br /><br /><strong>CPU/ABI</strong> - To get some sane performance we need to use x86 image. Not sure if a 64 bit will work or it is needed. <strong>Google APIs Intel Atom (x86)</strong> is what it has to be selected here.<br /><br /><strong>GPU</strong> - The “Use Host GPU” parameter adds significant performance improvement. The downside is that it will produce some error messages in Studio Log window after launching an application in the emulator.<br /><br /><em>Example Error Messages:</em><br /><br />[ERROR] : eglCodecCommon: glUtilsParamSize: unknow param 0x00000bd0<br /><br />[ERROR] : eglCodecCommon: ERROR unknown type 0x73000f (glSizeof,73)<br /><br />I did not notice any side effect because of the above messages unless the noise generated in Studio’s Console.</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>Finally you can test your device by selecting it and pressing the “Start” button in AVD Manager. Once the device has fully loaded and you are satisfied with the results you can go and delete the titanium one as it used ARM CPU image and performance is significantly impacted.</p>
+
+<h3 id="installing-a-ca-certificate-in-avd">Installing a CA Certificate in AVD</h3>
+
+<p>You may want to install your own CA in the AVD. This can be used to establish TLS communication in case self signed certificates with SecureTransport or other Axway products. The Titanium http client does have an option to ignore the certificate trust, but the chromium browser that is used for the WebView  example does not.</p>
+
+<p>To install a CA certificate you need to copy the public key to the emulator SD card and then install the certificate from the storage. To copy the certificate to the emulator SD card:</p>
+
+<ol>
+  <li>
+    <p>Make sure that you new AVD is up and currently running.</p>
+  </li>
+  <li>
+    <p>Navigate to your “Android SDK Home” directory. (You can check the location by going to Window &gt; Preferences &gt; Studio &gt; Platforms  &gt; Android in Appcelerator Studio.)</p>
+  </li>
+  <li>
+    <p>From SDK Home go to the Tools directory and execute “monitor.bat”. This may need up to 2-3 minutes to start the first time, so be patient.</p>
+  </li>
+  <li>
+    <p>Once monitor is started on the left pane you should be able to see the name on your AVD and on the right side a “File Explorer” tab.</p>
+  </li>
+  <li>
+    <p>Locate your CA certificate file  in **Windows Explorer **and drag and drop it to the “sdcard” folder in monitor.</p>
+  </li>
+</ol>
+
+<p><img src="image_4.png" alt="image alt text" /></p>
+
+<p>Once all of the above is done go to your emulator and install the certificate like on a normal Android device: Settings &gt; Security &gt; Certificate Storage / Install from SD Card &gt; Select the certificate file and give it a name. You will be prompted to set a lock screen protection. Using PIN make most sense for the emulator.</p>
+
+<h3 id="additional-information">Additional Information</h3>
+
+<p>Additional and detailed information on setting up Studio and a Quick start guide are available at:</p>
+
+<p><a href="http://docs.appcelerator.com/platform/latest/#!/guide/Setting_up_Studio-section-37540095_SettingupStudio-Windows">Appcelerator Setting Up Studio Guide</a> and in the <a href="http://docs.appcelerator.com/platform/latest/#!/guide/Quick_Start">Quick Start Guide</a></p>
+
+<h1 id="writing-the-securetransport-filetracking-application">Writing the SecureTransport FileTracking application</h1>
+
+<p>The first step is to create a project for the new application. This is done from the <strong>File menu &gt; New &gt; Mobile App Project &gt; Two Tabbed Allow Application.</strong></p>
+
+<p>Next the project name, app ID and Deployment Targets need to be set. The app id needs to be in xxx.yyy format, example: <strong>com.axway.how.to.</strong></p>
+
+<p><img src="image_5.png" alt="image alt text" /></p>
+
+<p>Once this is done the project files will be generated and the project folder structure displayed in the Project Explorer Window. We are going to mainly work under the <strong>app **folder with the files under **views, controller, assets</strong>.</p>
+
+<p><img src="image_6.png" alt="image alt text" /></p>
+
+<h3 id="specifying-the-application-view">Specifying the Application view</h3>
+
+<p>We will be creating an application with two tabs. The tabs and the function each one will execute is defined in the **index.xml file under views. **The following code will create two tabs  with ids tab1 and tab2. A click(touch) in tab1 will execute the getTranferList function.  WebView is contained tab2. The below code is everything that needs to be placed in that file.</p>
+
+<pre><code>&lt;Alloy&gt;
+        &lt;TabGroup id="mainTabGroup"&gt;
+            &lt;Tab id="tab1" onClick="getTransList"&gt;
+                &lt;Window id="native"&gt;
+                	&lt;TableView id="tableView"/&gt;
+                &lt;/Window&gt;
+            &lt;/Tab&gt;
+            &lt;Tab id="tab2"&gt;
+                &lt;Window id="jquery"&gt;
+                	&lt;WebView id="mainView" url="/tab2.html"/&gt;
+                &lt;/Window&gt;
+            &lt;/Tab&gt;
+        &lt;/TabGroup&gt;
+&lt;/Alloy&gt;
+</code></pre>
+
+<h3 id="creating-the-gettranslist-function">Creating the getTransList function</h3>
+
+<p>All javascript code need to go to the <strong>controlers/index.js</strong> file. The next step is to create a table to be populated with the transfer entries from SecureTransport server:</p>
+
+<pre><code>// Function To Generate Table Row
+function createRow(account, filename, status){
+    // Create Table Row
+    var tableRow = Ti.UI.createTableViewRow({ height: 30 });
+
+    // Create Table Row Columns
+    var accountView   = Ti.UI.createView({ left : 0,     width : "25%", height: Ti.UI.Size });
+    var filenameView  = Ti.UI.createView({ left : "25%", width : "25%", height: Ti.UI.Size });
+    var statusView   = Ti.UI.createView({ left : "50%", width : "50%", height: Ti.UI.Size });
+   
+
+    // Create Table Row Column Labels
+    accountView.add(Ti.UI.createLabel({   top: 5, right: 5, bottom: 5, left: 5, text: account }));
+    filenameView.add(Ti.UI.createLabel({  top: 5, right: 5, bottom: 5, left: 5, text: filename }));
+    statusView.add(Ti.UI.createLabel({   top: 5, right: 5, bottom: 5, left: 5, text: status }));
+    
+
+    // Add Columns To Table Row
+    tableRow.add(accountView);
+    tableRow.add(filenameView);
+    tableRow.add(statusView);
+
+
+    // Resource Clean-Up
+    account = filename = status = null;
+
+    // Finished
+    return tableRow;
+
+</code></pre>
+
+<p>The above code will create a row with 3 columns for the account name that transfers the file (accountView), the file name(filenameView) and the transfer status(statusView).</p>
+
+<p>We need to populate the above table with transfer list data provided via** SecureTransport REST API**. The data will be parsed for the needed information only (name of the account, name of the file and the status of the transfer ). Below is an example of the JSON returned by SecureTransport Server:</p>
+
+<pre><code>{
+  "transferEntries": [
+    {
+      "transferEntry": {
+        "status": "Processed",
+        "secure": true,
+        "account": "nka",
+        "login": "nka",
+        "direction": "Incoming",
+        "actionBy": "User",
+        "filename": "IE_View_Message_Header.JPG",
+        "filesize": 25611,
+        "protocol": "http",
+        "startTime": "Sat, 07 May 2016 22:11:33 -0400",
+        "duration": "597 ms",
+        "operationIndex": "(none)",
+        "metadata": {
+          "links": {
+            "self": "https://172.17.0.2:444/api/v1.2/transfers/SWQgW21UcmFuc2ZlclN0YXR1c0lkPTc5MDNlNjI3LTZiMzItNGUyZC1hZTA0LTA2OTFjMGE4MzliZCwgbVRyYW5zZmVyU3RhcnRUaW1lPTE0NjI2NzM0OTM1OTJd"
+          }
+        }
+      }
+    },
+    {
+      "transferEntry": {
+        "status": "Processed",
+        "secure": true,
+        "account": "nka",
+        "login": "nka",
+        "direction": "Incoming",
+        "actionBy": "User",
+        "filename": "ca_edge.crt",
+        "filesize": 1069,
+        "protocol": "http",
+        "startTime": "Sat, 07 May 2016 22:11:07 -0400",
+        "duration": "634 ms",
+        "operationIndex": "(none)",
+        "metadata": {
+          "links": {
+            "self": "https://172.17.0.2:444/api/v1.2/transfers/SWQgW21UcmFuc2ZlclN0YXR1c0lkPTk2OWVjMGRmLTQxNDAtNGM0Yy1hMWE4LWYyMzJjMGMzYjUwOCwgbVRyYW5zZmVyU3RhcnRUaW1lPTE0NjI2NzM0NjcyMzRd"
+          }
+        }
+      }
+    }
+  ]
+}
+
+</code></pre>
+
+<p>An example rest GET request used to returned the above output is:</p>
+
+<p><a href="https://172.17.0.2:444/api/v1.2/transfers/?limit=2&amp;endTimeAfter=Thu%2C%2005%20May%202016%2020%3A00%3A12%20%2B0000">https://172.17.0.2:444/api/v1.2/transfers/?limit=2&amp;endTimeAfter=Thu%2C%2005%20May%202016%2020%3A00%3A12%20%2B0000</a></p>
+
+<p>The next step is to define the **getTransList **function which we already referenced in the index.xml file. In a summary what getTransList will do is:</p>
+
+<ol>
+  <li>
+    <p>Use <strong>Ti.Network.createHTTPClient **to send a GET request to SecureTransport REST service. The request needs to have some headers such as basic authentication for which we will use **Titanium.Utils.base64encode ** to create the authorization token and **setRequestHeader to **set the needed headers. In addition we need to set the “endTimeAfter” parameter in the rest call to URL encoded rfc2822 format. For this the native Javascript **Date</strong> and **toUTCString **functions are used.</p>
+  </li>
+  <li>
+    <p>Next we use the Titanium <strong>JSON.parse **function</strong> <strong>on the response from HTTPClient (</strong>this.responseText**)</p>
+  </li>
+  <li>
+    <p>Finally a loop is used to populate the entries into the table.</p>
+  </li>
+</ol>
+
+<p>The above in Javascript code:</p>
+
+<pre><code>	function getTransList () {
+		//function to use HTTP to connect to a web server and transfer the data.
+		var st_rest_it = Ti.Network.createHTTPClient({
+			onerror: function(e){
+				Ti.API.debug(e.error);
+				alert('Error connecting to SecureTransprot API');
+			},
+		    timeout:10000,
+		});
+		// We want to show the transfers for the last 8 hours (480*60*1000) and convert that time in rfc2822  format
+		var endTimeAfter = new Date(new Date().getTime() - 480*60*1000).toUTCString().replace("GMT", "+0000");	
+		//Connection details follow next
+		st_rest_it.validatesSecureCertificate = false;
+		st_rest_it.open('GET', 'https://172.17.0.2:444/api/v1.2/transfers/?limit=500&amp;endTimeAfter='+endTimeAfter);  
+		authstr = 'Basic ' + Titanium.Utils.base64encode('admin' + ':' + 'admin');
+		st_rest_it.setRequestHeader('Authorization', authstr);
+		st_rest_it.setRequestHeader('Content-Type','application/json');
+		st_rest_it.send(); 
+		//Creating a function to parse json data on sucesfull resposne only
+		st_rest_it.onload = function(){
+			var json = JSON.parse(this.responseText);
+
+			//Make sure that any previous data is deleted 
+			dataArray = [];
+			
+			//Place parsed json data in a non-fancy table 
+			for( var i=0; i&lt;json.transferEntries.length; i++){
+			dataArray.push(createRow(json.transferEntries[i].transferEntry.account, json.transferEntries[i].transferEntry.status, json.transferEntries[i].transferEntry.filename));
+			};
+			
+			$.tableView.setData(dataArray);			
+		 };
+
+</code></pre>
+
+<p>At the end we need to load the whole application view with:</p>
+
+<p>$.mainTabGroup.open();  mainTabGroup is defined in index.xml.</p>
+
+<h3 id="the-webview-tab">The WebView Tab</h3>
+
+<p>The idea behind the WebView tab is to use the third party JavaScript library, developed by ShieldUI. The <a href="http://demos.shieldui.com">Shield UI JavaScript framework</a> provides a complete suite of web components for streamlined development, including 23 different chart types, a full-featured grid, and many other high-performance customizable widgets.</p>
+
+<p>All of the needed coded is contained in the  assets/tab2.html file. Again we have specified that the second tab will be based on WebView and it will open the above html file under index.html. The only change that was done to the example available at shield UI was to add a code for the REST request. That HTTP GET request JavaScript code was actually generated via the Chrome plugin “postman” and since we are still using Javascript we get the time before 8 hours in rfc2822 format in <strong>absolutely the same way</strong> as for the first tab.</p>
+
+<pre><code>&lt;script type="text/javascript"&gt;
+    jQuery(function ($) {
+		var endTimeAfter = new Date(new Date().getTime() - 480*60*1000).toUTCString().replace("GMT", "+0000");
+    	$.support.cors = true;
+        // load the data via ajax
+        var settings = {
+            "async": true,
+            "crossDomain": true,
+            "url": "https://172.17.0.2:444/api/v1.2/transfers/?limit=10&amp;endTimeAfter="+encodeURIComponent(endTimeAfter),
+            "method": "GET",
+            "headers": {
+                "authorization": "Basic YWRtaW46YWRtaW4=",
+                "content-type": "application/json"
+            }
+        };
+
+        $.ajax(settings).done(function(response) {
+            // transform the data
+            var success = 0,
+                failed = 0,
+                inprogress = 0;
+
+            for (var i=0; i&lt;response.transferEntries.length; i++) {
+                if (response.transferEntries[i].transferEntry.status == "Processed") {
+                    success++;
+                }
+                else if (response.transferEntries[i].transferEntry.status == "Failed") {
+                    failed++;
+                }
+                else {
+                    inprogress++;
+                }
+            }
+
+</code></pre>
+
+<p>It makes sense first to test the pie chart plugin in a web browser before compiling it into the application. To do this simply open the tab2.html file in a web browser. The only caveat here is that SecureTransport REST API does not support Cross-origin resource sharing (CORS) which is recently required by most browsers, so you will need to use Google Chrome and start it through a shortcut that has the following switch:  –disable-web-security</p>
+
+<p>Once this is done you should see the pie chart showing the number of successful, failed and in-progress transfers.</p>
+
+<p><img src="image_7.png" alt="image alt text" /></p>
+
+<p>If satisfied with the results, drag &amp; drop the **tab2.html file to Appcelerator Studio &gt; your project &gt; app &gt; assets folder. **</p>
+
+<p>To test the application select the name of your emulator and press the run button located at the top right corner of Studio. The project will be compiled, the apk file signed and automatically installed and started on the Android emulator. The experience when using an actual Android device is identical.</p>
+
+<p>The final result is displayed below. The first tab shows a table with file transfers and the second tab a pie chart based on the transfers status. When testing the application it was noticed that the Jquery module is not refreshed every time the tab is loaded (meaning chromium did not reload the tab2.html page). This caused the pie chart not to show any new transfer entries until the whole application was restarted.  One way to resolve this was to add an** event listener** to the mainTabGroup. In this case the listener monitors for “focus” event and executes a reload. In that way when the user opens the second tab, it will reload which will refresh the transfers count and re-run the pie chart animation.</p>
+
+<pre><code>//reload chart view when the tab is opened
+$.mainTabGroup.addEventListener('focus', function(e) {
+    if (e.index == 1) {
+        $.mainView.reload();
+    }
+});
+</code></pre>
+
+<table>
+  <thead>
+    <tr>
+      <th><img src="image_004.png" alt="" /></th>
+      <th><img src="image_005.png" alt="" /></th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td> </td>
+      <td> </td>
+    </tr>
+  </tbody>
+</table>
+
+<p>The above two print screens are from the Android Emulator running the SecureTransport FileTracking application.</p>
+
+<p>#</p>
+
+</div>
+
+<div class="keep-in-touch">
+  <p>
+    
+  </p>
+</div>
+<a href="https://twitter.com/share" class="twitter-share-button" data-via="" data-size="large" data-hashtags="gotchacode">Tweet</a>
+<script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0],p=/^http:/.test(d.location)?'http':'https';if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src=p+'://platform.twitter.com/widgets.js';fjs.parentNode.insertBefore(js,fjs);}}(document, 'script', 'twitter-wjs');</script>
+
+
+<!-- Add Disqus comments. -->
+
+<div id="disqus_thread"></div>
+<script type="text/javascript">
+  /* * * CONFIGURATION VARIABLES: EDIT BEFORE PASTING INTO YOUR WEBPAGE * * */
+  var disqus_shortname = 'innablog-1'; // required: replace example with your forum shortname
+
+  /* * * DON'T EDIT BELOW THIS LINE * * */
+  (function() {
+    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+    dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+  })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+
+
+
+  
+
+<script type="text/javascript">
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', '']);
+  _gaq.push(['_trackPageview']);
+  (function() {
+  var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+  ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+  var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+</script>
+
+  </div><!-- /.main -->
+</body>
+</html>
