@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+<title>breathe-eat-repeat</title>
+<meta name="description" content="breathe-eat-repeat">
+<meta name="keywords" content="">
+
+<meta property="og:type" content="article">
+<meta property="og:title" content="Dockerize ICAP enabled antivirus for less than a minute and 15 megabytes &#8211; ">
+<meta property="og:description" content="breathe-eat-repeat">
+<meta property="og:url" content="http://myposts.kokobok.host/docker/2017/04/20/ICAP_DockerFile.html">
+<meta property="og:site_name" content="">
+
+<!-- Webmaster Tools verfication -->
+
+
+
+
+<link rel="canonical" href="http://myposts.kokobok.host/docker/2017/04/20/ICAP_DockerFile.html">
+<link href="http://myposts.kokobok.host/feed.xml" type="application/atom+xml" rel="alternate" title=" Feed">
+
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<link rel="stylesheet" href="http://myposts.kokobok.host/css/base.min.css" type="text/css" />
+<link rel="stylesheet" href="http://myposts.kokobok.host/css/github.min.css" type="text/css" />
+<link rel="stylesheet" href="http://myposts.kokobok.host/css/octicons.css" type="text/css" />
+<link href='http://fonts.googleapis.com/css?family=Lato' rel='stylesheet' type='text/css'>
+
+</head>
+<body>
+  <div class="header-container">
+  <header>
+      <ul class="nav">
+        <!--Change the URL here if working on an absolute domain-->
+        <li><a href="/"><span class="mega-octicon octicon-keyboard" style="margin-right: 6px;"></span>thisBlog</a></li>
+		<li><a href="/about"><span class="mega-octicon octicon-hubot" style="margin-right: 6px;"></span>aboutMe</a></li>
+        <li><a href="https://github.com/nkapashi/"><span class="mega-octicon octicon-octoface" style="margin-right: 6px;"></span>meGithub</a></li>
+      </ul>
+  </header>
+</div>
+  <div class="container">
+    <p class="intro">
+      Nikolay's Posts...
+    </p>
+  <h2>Dockerize ICAP enabled antivirus for less than a minute and 15 megabytes</h2>
+<p class="meta">20 Apr 2017</p>
+
+<div class="post">
+<h1 id="dockerize-icap-enabled-antivirus-for-less-than-a-minute-and-15-megabytes">Dockerize ICAP enabled antivirus for less than a minute and 15 megabytes</h1>
+
+<p>This is a dockerfile for building an image of ICAP enabled Antivirus server that is based on c-icap, clamav and Alpine Linux. As this is for <strong>testing, researching and demonstration purposes only</strong>, the clamav antivirus database does not contain any valid virus signatures, thus it will not detect any viruses. Again for the same purpose one may want to simulate a file being blocked by the antivirus engine. For that a custom antivirus signature is added that will recognize a particular and well known good file as a virus. That file is putty.exe. So if you want to test/demonstrate a file blocked by ICAP just transfer your putty.exe to the server.</p>
+
+<p><strong>Freshclam</strong> is also available to download actual antivirus definition files in case they are needed.</p>
+
+<h2 id="build-instructions">Build Instructions</h2>
+
+<ul>
+  <li>
+    <p>Get all needed files either by downloading the repository as a zip file:</p>
+
+    <p>https://github.com/nkapashi/c_icapClamav/archive/master.zip</p>
+  </li>
+  <li>
+    <p>Or alternatively:</p>
+
+    <pre><code>git clone https://github.com/nkapashi/c_icapClamav.git
+</code></pre>
+  </li>
+  <li>
+    <p>Navigate the the directory containing the Dockerfile and issue the following command:</p>
+  </li>
+</ul>
+
+<pre><code>docker build -t {imageName} .
+
+Example: docker build icap .
+</code></pre>
+
+<p>Note: the ‘.’ specifies the path to the Dockerfile. Docker and the container will need to have access to the Internet in order to download the needed packages.</p>
+
+<p>The Dockerfile does most of the commands in a single run so the number of image layers is kept to a minimum.</p>
+
+<pre><code class="language-dockerfile"># Build a docker image for clamav/clamd
+
+FROM alpine:latest
+
+LABEL maintainer "nkapashi"
+
+ENV cicapBaseVersion="0.5.2" cicapModuleVersion="0.4.5"
+
+WORKDIR /
+
+# 1. create needed directories
+RUN mkdir -p /tmp/install &amp;&amp; mkdir -p /opt/c-icap &amp;&amp; mkdir -p /var/log/c-icap/ &amp;&amp; mkdir -p /run/clamav &amp;&amp; \
+	cd /tmp/install &amp;&amp; \
+
+# 2. install needed packages
+	apk --update --no-cache add \
+		bzip2 \
+		bzip2-dev \ 
+		zlib \
+		zlib-dev \
+		curl \
+		tar \
+		gcc \
+		make \
+		g++ \
+		clamav \ 
+		clamav-libunrar &amp;&amp; \
+
+# 3. download c_icap, c_icap modules and install them 
+	curl --silent --location --remote-name "http://downloads.sourceforge.net/project/c-icap/c-icap/0.5.x/c_icap-${cicapBaseVersion}.tar.gz" &amp;&amp; \
+	curl --silent --location --remote-name "https://sourceforge.net/projects/c-icap/files/c-icap-modules/0.4.x/c_icap_modules-${cicapModuleVersion}.tar.gz" &amp;&amp; \
+	tar -xzf "c_icap-${cicapBaseVersion}.tar.gz" &amp;&amp; tar -xzf "c_icap_modules-${cicapModuleVersion}.tar.gz" &amp;&amp; cd c_icap-${cicapBaseVersion} &amp;&amp; \
+	./configure --quiet --prefix=/opt/c-icap --enable-large-files &amp;&amp; make &amp;&amp; make install &amp;&amp; \
+	cd ../c_icap_modules-${cicapModuleVersion}/ &amp;&amp; ./configure --quiet --with-c-icap=/opt/c-icap --prefix=/opt/c-icap &amp;&amp; \
+	make &amp;&amp; make install &amp;&amp; \
+
+# 4. configure clamav and initialize anti-virus database
+	chown clamav:clamav /run/clamav &amp;&amp; \
+	sed -i 's/^#Foreground .*$/Foreground true/g' /etc/clamav/clamd.conf &amp;&amp; \
+	sed -i 's/^#Foreground .*$/Foreground true/g' /etc/clamav/freshclam.conf &amp;&amp; \
+	sed -i 's/#MaxAttempts .*$/MaxAttempts 5/g' /etc/clamav/freshclam.conf &amp;&amp; \
+	sed -i 's/#DatabaseMirror .*$/DatabaseMirror db.US.clamav.net/g' /etc/clamav/freshclam.conf &amp;&amp; \
+
+# 5. clean up
+	cd / &amp;&amp; rm -rf /tmp/install &amp;&amp; \
+	apk del \
+		bzip2 \
+		bzip2-dev \ 
+		zlib \
+		zlib-dev \
+		curl \
+		tar \
+		gcc \
+		make \
+		g++
+
+# 6. add configuration file and antivrus database file
+		
+ADD ./etc /opt/c-icap/etc
+ADD ./opt /opt
+COPY custom_vir_sig.ndb /var/lib/clamav/ 
+CMD /opt/start.sh &amp;&amp; /bin/sh
+</code></pre>
+
+<h2 id="usage">Usage</h2>
+
+<p>Start the container:</p>
+
+<p>docker run –name icap -it icap</p>
+
+<p>Note: depending on your Docker setup you may need to forward port <strong>1344</strong>.</p>
+
+<p>Example:</p>
+
+<p>docker run -p my_Ip_address:1344 –name icap -it icap</p>
+
+<p>After all services are started the container will give a shell access. All scan activity is under the /var/log/c-icap/access.log.</p>
+
+<h2 id="icap-client-configuration">ICAP Client Configuration</h2>
+
+<p>Configure the ICAP client by specifying the following address:</p>
+
+<p>icap://{icap_docker_container_ip}:1433/avscan</p>
+
+<h2 id="summary">Summary</h2>
+
+<p>For about a minute and less than 15 MB, we have a functional ICAP enabled antivirus server that can be used for demonstration, testing or research purposes.</p>
+
+<p>If you need to “quarantine” something - transfer the file putty.exe.</p>
+
+<p><img src="../assets/icap.JPG" alt="" /></p>
+
+<p>*Important Note:</p>
+
+<p><strong>Do not use in production. Only for testing / demonstration purposes.</strong></p>
+
+</div>
+
+<div class="keep-in-touch">
+  <p>
+    
+  </p>
+</div>
+<a href="https://twitter.com/share" class="twitter-share-button" data-via="" data-size="large" data-hashtags="gotchacode">Tweet</a>
+<script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0],p=/^http:/.test(d.location)?'http':'https';if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src=p+'://platform.twitter.com/widgets.js';fjs.parentNode.insertBefore(js,fjs);}}(document, 'script', 'twitter-wjs');</script>
+
+
+<!-- Add Disqus comments. -->
+
+<div id="disqus_thread"></div>
+<script type="text/javascript">
+  /* * * CONFIGURATION VARIABLES: EDIT BEFORE PASTING INTO YOUR WEBPAGE * * */
+  var disqus_shortname = 'innablog-1'; // required: replace example with your forum shortname
+
+  /* * * DON'T EDIT BELOW THIS LINE * * */
+  (function() {
+    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+    dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+  })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+
+
+
+  
+
+<script type="text/javascript">
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-89655855-1']);
+  _gaq.push(['_trackPageview']);
+  (function() {
+  var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+  ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+  var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+</script>
+
+  </div><!-- /.main -->
+</body>
+</html>
